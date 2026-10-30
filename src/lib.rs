@@ -3,4 +3,4 @@
 
 pub mod backup;
 
-pub use backup::Backup;
+pub use backup::backup_manager::BackupJobManager;
