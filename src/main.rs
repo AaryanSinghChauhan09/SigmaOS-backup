@@ -1,38 +1,10 @@
-use std::env;
-use log::{info, warn, error, debug};
-use anyhow::Result;
-use clap::Parser;
-use backup::backup;
+use ::backup::{backup, Config};
 
-#[derive(Parser)]
-struct Cli {
-    #[arg(short, long)]
-    auto: bool,
-}
-
-fn main() -> Result<()> { -> Result<()> {
-    let cli = Cli::parse();
-    let config = backup::Config { auto_start: cli.auto, ..Default::default() };
+fn main() -> anyhow::Result<()> {
+    let config = Config::default();
     let mut component = backup::new(config);
-    
     component.initialize()?;
     component.run()?;
-    
     println!("SigmaOS-backup operational");
     Ok(())
-}
-
-#[derive(Debug, Clone)]
-struct Config {
-    verbose: bool,
-    dry_run: bool,
-}
-
-impl Config {
-    fn from_env() -> Self {
-        Config {
-            verbose: env::var("VERBOSE").is_ok(),
-            dry_run: env::var("DRY_RUN").is_ok(),
-        }
-    }
 }
