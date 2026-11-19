@@ -1,43 +1,54 @@
-//! SigmaOS-backup - SigmaOS Component
-//!
-//! Development and system tools for SigmaOS.
+//! SigmaOS backup component
+#![forbid(unsafe_code)]
+#![warn(missing_docs)]
 
-use anyhow::Result;
-use log::info;
-use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Config {
-    pub enabled: bool,
-    pub auto_start: bool,
+/// Error types for this component.
+#[derive(Debug, Error)]
+pub enum ComponentError {
+    /// Not initialised.
+    #[error("component not initialised")]
+    NotInitialised,
+    /// Unsupported operation.
+    #[error("unsupported: {0}")]
+    Unsupported(&'static str),
 }
 
-impl Default for Config {
-    fn default() -> Self {
-        Self { enabled: true, auto_start: true }
-    }
-}
+/// Result alias.
+pub type ComponentResult<T> = Result<T, ComponentError>;
 
-pub struct backup {
-    config: Config,
-}
+/// Component handle.
+#[derive(Debug, Default, Clone)]
+pub struct Component { initialised: bool }
 
-impl backup {
-    pub fn new(config: Config) -> Self {
-        Self { config }
-    }
-
-    pub fn initialize(&mut self) -> Result<()> {
-        info!("Initializing SigmaOS-backup");
+impl Component {
+    /// Create uninitialised component.
+    pub fn new() -> Self { Self::default() }
+    /// Initialise.
+    pub fn init(&mut self) -> ComponentResult<()> { self.initialised = true; Ok(()) }
+    /// Is ready?
+    pub fn is_ready(&self) -> bool { self.initialised }
+    /// Run.
+    pub fn run(&self) -> ComponentResult<()> {
+        if !self.initialised { return Err(ComponentError::NotInitialised); }
         Ok(())
     }
-
-    pub fn run(&mut self) -> Result<()> {
-        info!("Running SigmaOS-backup");
-        Ok(())
-    }
+    /// Reset.
+    pub fn reset(&mut self) { self.initialised = false; }
 }
 
-pub mod config;
-pub mod error;
-pub mod service;
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_new_not_ready() { assert!(!Component::new().is_ready()); }
+    #[test]
+    fn test_init_ok() { let mut c = Component::new(); c.init().unwrap(); assert!(c.is_ready()); }
+    #[test]
+    fn test_run_before_init_err() { assert!(Component::new().run().is_err()); }
+    #[test]
+    fn test_run_after_init_ok() { let mut c = Component::new(); c.init().unwrap(); assert!(c.run().is_ok()); }
+    #[test]
+    fn test_reset() { let mut c = Component::new(); c.init().unwrap(); c.reset(); assert!(!c.is_ready()); }
+}
