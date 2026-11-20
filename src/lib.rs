@@ -2,6 +2,8 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
+pub mod sigmabackupmanager;
+
 use thiserror::Error;
 
 /// Error types for this component.
